@@ -25,4 +25,12 @@ export class MasterUpdate {
 	async onIgnoreWorkshopTarget(ctx: Context) {
 		return this.masterService.onIgnoreWorkshopTarget(ctx);
 	}
+	@Hears("Confirm")
+	async onConfirm(ctx: Context) {
+		return this.masterService.onConfirm(ctx);
+	}
+	@Hears("Reject")
+	async onReject(ctx: Context) {
+		return this.masterService.onReject(ctx);
+	}
 }

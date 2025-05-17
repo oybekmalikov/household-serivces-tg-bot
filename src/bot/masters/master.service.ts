@@ -109,13 +109,25 @@ export class MasterService {
 						break;
 					case "avg_time":
 						master.avgtime_for_custommer = userInput;
-						master!.last_state = "finish";
-						master.status = true;
+						master!.last_state = "pending";
 						await master?.save();
-						await ctx.reply("🎉 Congrats you have successfully registered!", {
-							parse_mode: "HTML",
-							...Markup.removeKeyboard(),
-						});
+						await ctx.replyWithHTML(
+							`1. Name - ${master.name}
+2. Phone number - ${master.phone_number}
+3. Workshop name - ${master.workshop_name ? master.workshop_name : "Ignored"}
+4. Workshop address - ${master.address ? master.address : "Ignored"}
+5. Workshop target - ${master.target_for_address ? master.target_for_address : "Ignored"}
+6. Location - ${master.location}
+7. Time to start work - ${master.work_start_time}
+8. Time to finish work - ${master.work_end_time}
+9. Avarage time spent per customer - ${master.avgtime_for_custommer}
+<b>Confirm this information?</b>
+							`,
+							{
+								parse_mode: "HTML",
+								...Markup.keyboard([["Confirm", "Reject"]]).resize(),
+							}
+						);
 						break;
 				}
 			} catch (error) {
@@ -174,6 +186,56 @@ export class MasterService {
 			});
 		} catch (error) {
 			console.log(`Error on onIgnoreWorkshopAddress: `, error);
+		}
+	}
+	async onConfirm(ctx: Context) {
+		try {
+			const user_id = ctx.from?.id;
+			const master = await this.mastersModel.findOne({ where: { user_id } });
+			if (!master) {
+				await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
+					...Markup.keyboard([[`/start`]])
+						.oneTime()
+						.resize(),
+				});
+			} else if (master.last_state == "pending") {
+				master.last_state = "finish";
+				master.status = true;
+				await master.save();
+				await ctx.replyWithHTML(
+					`🎉 Congratulations, you've successfully registered!`,
+					{
+						...Markup.removeKeyboard(),
+					}
+				);
+			}
+		} catch (error) {
+			console.log(`Error on confirm: `, error);
+		}
+	}
+	async onReject(ctx: Context) {
+		try {
+			const user_id = ctx.from?.id;
+			const master = await this.mastersModel.findOne({ where: { user_id } });
+			if (!master) {
+				await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
+					...Markup.keyboard([[`/start`]])
+						.oneTime()
+						.resize(),
+				});
+			} else if (master.last_state == "pending") {
+				await this.mastersModel.destroy({ where: { user_id: master.user_id } });
+				await ctx.replyWithHTML(
+					`Your information was not verified, click <b>start</b> to register again.`,
+					{
+						...Markup.keyboard([[`/start`]])
+							.oneTime()
+							.resize(),
+					}
+				);
+			}
+		} catch (error) {
+			console.log(`Error on reject: `, error);
 		}
 	}
 }
