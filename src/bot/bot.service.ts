@@ -2,13 +2,17 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Context, Markup } from "telegraf";
 import { MasterService } from "./masters/master.service";
+import { Customer } from "./models/customer.model";
 import { Masters } from "./models/master.model";
+import { CustomerService } from './customers/customer.service'
 
 @Injectable()
 export class BotService {
 	constructor(
 		@InjectModel(Masters) private readonly masterModel: typeof Masters,
-		private readonly masterService: MasterService
+		@InjectModel(Customer) private readonly customerModel: typeof Customer,
+		private readonly masterService: MasterService,
+		private readonly customerService: CustomerService
 	) {}
 	async start(ctx: Context) {
 		try {
@@ -55,6 +59,40 @@ export class BotService {
 					});
 				}
 			}
+			// -----------------------CUSTOMER------------------------
+			const customer = await this.customerModel.findOne({ where: { user_id } });
+			if (!customer) {
+				await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
+					...Markup.keyboard([[`/start`]])
+						.oneTime()
+						.resize(),
+				});
+			} else if (!customer.phone_number && "contact" in ctx.message!) {
+				if (String(ctx.message.contact.user_id) == user_id) {
+					let phone = ctx.message.contact.phone_number;
+					if (phone[0] != "+") {
+						phone = "+" + phone;
+					}
+					customer.phone_number = phone;
+					customer.status = true;
+					await customer.save();
+					await ctx.replyWithHTML(
+						`🎉 Congratulations, you've successfully registered!`,
+						{
+							...Markup.keyboard([
+								["My meetings", "Make an appointment"],
+							]).resize(),
+						}
+					);
+				} else {
+					await ctx.reply("Enter your own phone number:", {
+						parse_mode: "HTML",
+						...Markup.keyboard([
+							[Markup.button.contactRequest("Send Phone Number")],
+						]).resize(),
+					});
+				}
+			}
 		} catch (error) {
 			console.log("Error on onContact: ", error);
 		}
@@ -90,6 +128,7 @@ export class BotService {
 	async onText(ctx: Context) {
 		try {
 			this.masterService.onText(ctx);
+			this.customerService.onText(ctx);
 		} catch (error) {
 			console.log(`error on onText: `, error);
 		}

@@ -4,7 +4,10 @@ import { SequelizeModule } from "@nestjs/sequelize";
 import { TelegrafModule } from "nestjs-telegraf";
 import { BOT_NAME } from "./app.constants";
 import { BotModule } from "./bot/bot.module";
+import { ChatWithAdmin } from "./bot/models/chat-with-admin.model";
 import { Masters } from "./bot/models/master.model";
+import { MasterCustomers } from './bot/models/master-customers.model'
+import { Customer } from './bot/models/customer.model'
 @Module({
 	imports: [
 		ConfigModule.forRoot({ envFilePath: ".env", isGlobal: true }),
@@ -23,7 +26,7 @@ import { Masters } from "./bot/models/master.model";
 			username: process.env.PG_USER,
 			password: process.env.PG_PASSWORD,
 			database: process.env.PG_DB,
-			models: [Masters],
+			models: [Masters, ChatWithAdmin, MasterCustomers, Customer],
 			autoLoadModels: true,
 			sync: { alter: true },
 			logging: false,
