@@ -8,17 +8,31 @@ export class MasterService {
 	constructor(
 		@InjectModel(Masters) private readonly mastersModel: typeof Masters
 	) {}
-	async onMaster(ctx: Context) {
+	async showOccupation(ctx: Context) {
 		try {
-			const master_id = ctx.from?.id;
+			await ctx.replyWithHTML("Select the desired section:", {
+				...Markup.keyboard([
+					["Hairdresser", "Beauty Salon"],
+					["Jewelry Workshop", "Watchmaker"],
+					["Shoe Workshop"],
+				]).resize(),
+			});
+		} catch (error) {
+			console.log(`Error on show Occupation: `, error);
+		}
+	}
+	async onMaster(ctx: Context, occup: string) {
+		try {
+			const master_id = ctx.from!.id;
 			const master: Masters | null = await this.mastersModel.findOne({
 				where: { user_id: master_id },
 			});
 			if (!master) {
 				await this.mastersModel.create({
 					user_id: ctx.message!.from.id,
+					section: occup,
 				});
-			} else if (master.last_state == "finish") {
+			} else if (master.last_state == "finish" && master.section == occup) {
 				return await ctx.reply("You are already registered", {
 					...Markup.removeKeyboard(),
 				});

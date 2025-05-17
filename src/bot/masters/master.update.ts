@@ -11,7 +11,27 @@ export class MasterUpdate {
 	) {}
 	@Hears("Master")
 	async onMaster(ctx: Context) {
-		return this.masterService.onMaster(ctx);
+		return this.masterService.showOccupation(ctx);
+	}
+	@Hears("Hairdresser")
+	async Hairdresser(ctx: Context) {
+		return this.masterService.onMaster(ctx, "hairdresser");
+	}
+	@Hears("Beauty Salon")
+	async beautySalon(ctx: Context) {
+		return this.masterService.onMaster(ctx, "beauty_salon");
+	}
+	@Hears("Jewelry Workshop")
+	async jewelryWorkshop(ctx: Context) {
+		return this.masterService.onMaster(ctx, "jewelry_workshop");
+	}
+	@Hears("Watchmaker")
+	async watchmaker(ctx: Context) {
+		return this.masterService.onMaster(ctx, "watchmaker");
+	}
+	@Hears("Shoe Workshop")
+	async shoeWorkshop(ctx: Context) {
+		return this.masterService.onMaster(ctx, "shoe_workshop");
 	}
 	@Hears("Ignore Workshop Name")
 	async onIgnoreWorkshopName(ctx: Context) {
@@ -33,4 +53,12 @@ export class MasterUpdate {
 	async onReject(ctx: Context) {
 		return this.masterService.onReject(ctx);
 	}
+	// @On("text")
+	// async onText(ctx: Context) {
+	// 	console.log(ctx.callbackQuery);
+	// }
+	// @On("message")
+	// async onMessage(ctx: Context) {
+	// 	console.log(ctx.callbackQuery);
+	// }
 }

@@ -10,7 +10,8 @@ interface IMastersCreationAttr {
 	work_start_time?: string;
 	work_end_time?: string;
 	avgtime_for_custommer?: string;
-	user_id?:number
+	user_id?: number;
+	section?: string;
 }
 
 @Table({ tableName: "masters", freezeTableName: true })
@@ -41,4 +42,6 @@ export class Masters extends Model<Masters, IMastersCreationAttr> {
 	declare last_state: string;
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare status: boolean;
+	@Column({ type: DataType.STRING(50), defaultValue: false })
+	declare section: string;
 }

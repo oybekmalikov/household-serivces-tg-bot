@@ -13,7 +13,7 @@ export class BotService {
 	async start(ctx: Context) {
 		try {
 			await ctx.replyWithHTML("Choose your role:", {
-				...Markup.keyboard([["Master", "Costumer"]])
+				...Markup.keyboard([["Master", "Customer"]])
 					.resize()
 					.oneTime(),
 			});
@@ -92,6 +92,18 @@ export class BotService {
 			this.masterService.onText(ctx);
 		} catch (error) {
 			console.log(`error on onText: `, error);
+		}
+	}
+	async adminMenu(ctx: Context, menuText = `<b>Admin Menu</b>`) {
+		try {
+			await ctx.replyWithHTML(menuText, {
+				parse_mode: "HTML",
+				...Markup.keyboard([["Master", "Customer"]])
+					.oneTime()
+					.resize(),
+			});
+		} catch (error) {
+			console.log(`Error on adminMenu: `, error);
 		}
 	}
 }
