@@ -22,10 +22,9 @@ export class AdminService {
 			const user_id = await this.chatWithAdminModel.findOne({
 				where: { responseContent: "not_yet" },
 			});
-			this.bot.telegram.sendMessage(
-				Number(user_id?.senderId),
-				ctx.message.text
-			);
+			const text = ctx.message.text;
+			user_id!.responseContent = text;
+			this.bot.telegram.sendMessage(Number(user_id?.senderId), text);
 		}
 	}
 }

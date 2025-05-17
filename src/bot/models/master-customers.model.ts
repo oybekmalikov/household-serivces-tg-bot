@@ -3,11 +3,12 @@ import { Column, DataType, Model, Table } from "sequelize-typescript";
 interface MasterCustomersCreationAttr {
 	user_id?: string;
 	master_id?: string;
-	name?: string;
 	date?: string;
 	time?: string;
 	status?: boolean;
 	mark?: number;
+	note?: string;
+	last_state: string;
 }
 @Table({ tableName: "master_customer", freezeTableName: true })
 export class MasterCustomers extends Model<
@@ -20,14 +21,16 @@ export class MasterCustomers extends Model<
 	declare master_id: string;
 	@Column({ type: DataType.STRING })
 	declare user_id: string;
-	@Column({ type: DataType.STRING(50) })
-	declare name: string;
 	@Column({ type: DataType.STRING(20) })
 	declare date: string;
 	@Column({ type: DataType.STRING(10) })
 	declare time: string;
-	@Column({ type: DataType.BOOLEAN })
-	declare status: boolean;
+	@Column({ type: DataType.ENUM("pending", "complated", "canceled") })
+	declare status: string;
 	@Column({ type: DataType.INTEGER })
 	declare mark: number;
+	@Column({ type: DataType.STRING })
+	declare note: string;
+	@Column({ type: DataType.STRING(50) })
+	declare last_state: string;
 }
