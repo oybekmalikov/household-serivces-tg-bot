@@ -23,7 +23,7 @@ export class BotService {
 	}
 	async onContact(ctx: Context) {
 		try {
-			const user_id = ctx.from?.id;
+			const user_id = String(ctx.from?.id);
 			const master = await this.masterModel.findOne({ where: { user_id } });
 			if (!master) {
 				await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
@@ -35,7 +35,7 @@ export class BotService {
 				master.last_state == "phone_number" &&
 				"contact" in ctx.message!
 			) {
-				if (ctx.message.contact.user_id == user_id) {
+				if (String(ctx.message.contact.user_id) == user_id) {
 					let phone = ctx.message.contact.phone_number;
 					if (phone[0] != "+") {
 						phone = "+" + phone;
@@ -62,7 +62,7 @@ export class BotService {
 	async onLocation(ctx: Context) {
 		try {
 			if ("location" in ctx.message!) {
-				const user_id = ctx.from?.id;
+				const user_id = String(ctx.from?.id);
 				const master = await this.masterModel.findOne({ where: { user_id } });
 				if (!master) {
 					await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {

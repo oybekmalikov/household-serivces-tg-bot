@@ -10,16 +10,15 @@ interface IMastersCreationAttr {
 	work_start_time?: string;
 	work_end_time?: string;
 	avgtime_for_custommer?: string;
-	user_id?: number;
+	user_id?: string;
 	section?: string;
 }
-
 @Table({ tableName: "masters", freezeTableName: true })
 export class Masters extends Model<Masters, IMastersCreationAttr> {
 	@Column({ type: DataType.INTEGER, autoIncrement: true, primaryKey: true })
 	declare id: number;
-	@Column({ type: DataType.INTEGER })
-	declare user_id: number;
+	@Column({ type: DataType.STRING })
+	declare user_id: string;
 	@Column({ type: DataType.STRING(50) })
 	declare name: string;
 	@Column({ type: DataType.STRING(20) })
@@ -40,8 +39,8 @@ export class Masters extends Model<Masters, IMastersCreationAttr> {
 	declare avgtime_for_custommer: string;
 	@Column({ type: DataType.STRING(20) })
 	declare last_state: string;
-	@Column({ type: DataType.BOOLEAN, defaultValue: false })
-	declare status: boolean;
+	@Column({ type: DataType.ENUM("pending","confirmed", "rejected") })
+	declare withAdmin: string;
 	@Column({ type: DataType.STRING(50), defaultValue: false })
 	declare section: string;
 }

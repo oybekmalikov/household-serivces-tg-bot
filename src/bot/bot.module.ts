@@ -7,7 +7,7 @@ import { MasterUpdate } from "./masters/master.update";
 import { Masters } from "./models/master.model";
 
 @Module({
-	imports: [SequelizeModule.forFeature([Masters])],
+	imports: [SequelizeModule.forFeature([Masters]),BotModule],
 	controllers: [],
 	providers: [BotService, MasterService, MasterUpdate, BotUpdate],
 })

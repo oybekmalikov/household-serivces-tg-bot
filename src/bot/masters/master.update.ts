@@ -1,4 +1,4 @@
-import { Hears, Update } from "nestjs-telegraf";
+import { Action, Hears, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
 import { BotService } from "../bot.service";
 import { MasterService } from "./master.service";
@@ -45,13 +45,21 @@ export class MasterUpdate {
 	async onIgnoreWorkshopTarget(ctx: Context) {
 		return this.masterService.onIgnoreWorkshopTarget(ctx);
 	}
-	@Hears("Confirm")
+	@Hears("Check")
 	async onConfirm(ctx: Context) {
 		return this.masterService.onConfirm(ctx);
 	}
 	@Hears("Reject")
 	async onReject(ctx: Context) {
 		return this.masterService.onReject(ctx);
+	}
+	@Action(/^confirm_+\d+/)
+	async confirmMaster(ctx: Context) {
+		this.masterService.confirmMasters(ctx);
+	}
+	@Action(/^reject_+\d+/)
+	async rejectMaster(ctx: Context) {
+		this.masterService.rejectMaster(ctx);
 	}
 	// @On("text")
 	// async onText(ctx: Context) {
