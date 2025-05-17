@@ -53,6 +53,10 @@ export class MasterUpdate {
 	async onReject(ctx: Context) {
 		return this.masterService.onReject(ctx);
 	}
+	@Hears("Write to Admin")
+	async onWriteToAdmin(ctx: Context) {
+		return this.masterService.onWriteToAdmin(ctx);
+	}
 	@Action(/^confirm_+\d+/)
 	async confirmMaster(ctx: Context) {
 		this.masterService.confirmMasters(ctx);

@@ -3,12 +3,15 @@ import { InjectModel } from "@nestjs/sequelize";
 import { InjectBot } from "nestjs-telegraf";
 import { Context, Markup, Telegraf } from "telegraf";
 import { BOT_NAME } from "../../app.constants";
+import { ChatWithAdmin } from "../models/chat-with-admin.model";
 import { Masters } from "../models/master.model";
 
 @Injectable()
 export class MasterService {
 	constructor(
 		@InjectModel(Masters) private readonly mastersModel: typeof Masters,
+		@InjectModel(ChatWithAdmin)
+		private readonly chatWithAdminModel: typeof ChatWithAdmin,
 		@InjectBot(BOT_NAME) private readonly bot: Telegraf<Context>
 	) {}
 	async showOccupation(ctx: Context) {
@@ -54,8 +57,27 @@ export class MasterService {
 				const master: Masters | null = await this.mastersModel.findOne({
 					where: { user_id: master_id },
 				});
-
 				const userInput = ctx.message!.text;
+				if (master?.isWritingToAdmin) {
+					await this.chatWithAdminModel.create({
+						senderId: master_id,
+						adminId: String(process.env.ADMIN),
+						requestContent: userInput,
+						responseContent:"not_yet"
+					});
+					await this.bot.telegram.sendMessage(
+						Number(process.env.ADMIN),
+						userInput
+					);
+					master.isWritingToAdmin = false;
+					await master.save();
+					await ctx.replyWithHTML(
+						"We sent your message to admin, please wait admin's response",
+						{
+							...Markup.removeKeyboard(),
+						}
+					);
+				}
 				switch (master?.last_state) {
 					case null:
 						master!.last_state = "name";
@@ -341,5 +363,19 @@ export class MasterService {
 			{ where: { user_id: masterId } }
 		);
 		await ctx.editMessageText(`Rejected, user_id=${masterId}`);
+	}
+	async onWriteToAdmin(ctx: Context) {
+		try {
+			const user_id = ctx.message?.from.id;
+			await this.mastersModel.update(
+				{ isWritingToAdmin: true },
+				{ where: { user_id } }
+			);
+			await ctx.replyWithHTML(`Write your problem, we will send it to Admin:`, {
+				...Markup.removeKeyboard(),
+			});
+		} catch (error) {
+			console.log(error);
+		}
 	}
 }

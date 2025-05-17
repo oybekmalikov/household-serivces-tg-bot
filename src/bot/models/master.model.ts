@@ -39,8 +39,10 @@ export class Masters extends Model<Masters, IMastersCreationAttr> {
 	declare avgtime_for_custommer: string;
 	@Column({ type: DataType.STRING(20) })
 	declare last_state: string;
-	@Column({ type: DataType.ENUM("pending","confirmed", "rejected") })
+	@Column({ type: DataType.ENUM("pending", "confirmed", "rejected") })
 	declare withAdmin: string;
-	@Column({ type: DataType.STRING(50), defaultValue: false })
+	@Column({ type: DataType.STRING(50) })
 	declare section: string;
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare isWritingToAdmin: boolean;
 }

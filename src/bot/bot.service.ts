@@ -5,6 +5,7 @@ import { MasterService } from "./masters/master.service";
 import { Customer } from "./models/customer.model";
 import { Masters } from "./models/master.model";
 import { CustomerService } from './customers/customer.service'
+import { AdminService } from './admins/admins.service'
 
 @Injectable()
 export class BotService {
@@ -12,7 +13,8 @@ export class BotService {
 		@InjectModel(Masters) private readonly masterModel: typeof Masters,
 		@InjectModel(Customer) private readonly customerModel: typeof Customer,
 		private readonly masterService: MasterService,
-		private readonly customerService: CustomerService
+		private readonly customerService: CustomerService,
+		private readonly adminService: AdminService,
 	) {}
 	async start(ctx: Context) {
 		try {
@@ -127,6 +129,7 @@ export class BotService {
 	}
 	async onText(ctx: Context) {
 		try {
+			this.adminService.responseToMaster(ctx)
 			this.masterService.onText(ctx);
 			this.customerService.onText(ctx);
 		} catch (error) {
