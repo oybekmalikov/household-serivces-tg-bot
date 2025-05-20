@@ -25,7 +25,7 @@ export class MasterCustomers extends Model<
 	declare date: string;
 	@Column({ type: DataType.STRING(10) })
 	declare time: string;
-	@Column({ type: DataType.ENUM("pending", "complated", "canceled") })
+	@Column({ type: DataType.ENUM("pending", "complated", "canceled","feedback") })
 	declare status: string;
 	@Column({ type: DataType.INTEGER })
 	declare mark: number;
@@ -33,4 +33,7 @@ export class MasterCustomers extends Model<
 	declare note: string;
 	@Column({ type: DataType.STRING(50) })
 	declare last_state: string;
+	@Column({ type: DataType.STRING })
+	declare feedback: string;
+	
 }

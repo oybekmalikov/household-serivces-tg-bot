@@ -12,6 +12,7 @@ interface IMastersCreationAttr {
 	avgtime_for_custommer?: string;
 	user_id?: string;
 	section?: string;
+	last_state?: string;
 }
 @Table({ tableName: "masters", freezeTableName: true })
 export class Masters extends Model<Masters, IMastersCreationAttr> {

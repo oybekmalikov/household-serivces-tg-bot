@@ -59,11 +59,19 @@ export class MasterUpdate {
 	}
 	@Action(/^confirm_+\d+/)
 	async confirmMaster(ctx: Context) {
-		this.masterService.confirmMasters(ctx);
+		return this.masterService.confirmMasters(ctx);
 	}
 	@Action(/^reject_+\d+/)
 	async rejectMaster(ctx: Context) {
-		this.masterService.rejectMaster(ctx);
+		return this.masterService.rejectMaster(ctx);
+	}
+	@Hears("Rating")
+	async masterMarrks(ctx: Context) {
+		return this.masterService.onMasterMarks(ctx);
+	}
+	@Hears("Customers")
+	async showCustomers(ctx: Context) {
+		return this.masterService.showCustomers(ctx);
 	}
 	// @On("text")
 	// async onText(ctx: Context) {

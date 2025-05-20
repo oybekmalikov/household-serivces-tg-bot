@@ -4,12 +4,17 @@ import { InjectBot } from "nestjs-telegraf";
 import { Context, Markup, Telegraf } from "telegraf";
 import { BOT_NAME } from "../../app.constants";
 import { ChatWithAdmin } from "../models/chat-with-admin.model";
+import { Customer } from "../models/customer.model";
+import { MasterCustomers } from "../models/master-customers.model";
 import { Masters } from "../models/master.model";
 
 @Injectable()
 export class MasterService {
 	constructor(
 		@InjectModel(Masters) private readonly mastersModel: typeof Masters,
+		@InjectModel(Customer) private readonly customersModel: typeof Customer,
+		@InjectModel(MasterCustomers)
+		private readonly masterCustomerModel: typeof MasterCustomers,
 		@InjectModel(ChatWithAdmin)
 		private readonly chatWithAdminModel: typeof ChatWithAdmin,
 		@InjectBot(BOT_NAME) private readonly bot: Telegraf<Context>
@@ -31,7 +36,7 @@ export class MasterService {
 		try {
 			const master_id = String(ctx.from!.id);
 			const master = await this.mastersModel.findOne({
-				where: { user_id: master_id },
+				where: { user_id: master_id, section: occup },
 			});
 			if (!master) {
 				await this.mastersModel.create({
@@ -39,38 +44,41 @@ export class MasterService {
 					section: occup,
 				});
 			} else if (master.last_state == "finish" && master.section == occup) {
-				return await ctx.reply("You are already registered", {
-					...Markup.removeKeyboard(),
+				return await ctx.replyWithHTML(`Welcome ${master.name}`, {
+					...Markup.keyboard([
+						["Customers", "Time", "Rating"],
+						["Edit my data"],
+					]).resize(),
 				});
 			} else if (master.withAdmin == "rejected") {
 				await this.mastersModel.destroy({ where: { user_id: master_id } });
 			}
-			return this.onText(ctx);
+			return this.onText(ctx, occup);
 		} catch (error) {
 			console.log("Error on onMaster: ", error);
 		}
 	}
-	async onText(ctx: Context) {
+	async onText(ctx: Context, occup) {
 		if ("text" in ctx.message!) {
 			try {
 				const master_id = String(ctx.from?.id);
-				const master: Masters | null = await this.mastersModel.findOne({
+				const master1: Masters | null = await this.mastersModel.findOne({
 					where: { user_id: master_id },
 				});
 				const userInput = ctx.message!.text;
-				if (master?.isWritingToAdmin) {
+				if (master1?.isWritingToAdmin) {
 					await this.chatWithAdminModel.create({
 						senderId: master_id,
 						adminId: String(process.env.ADMIN),
 						requestContent: userInput,
-						responseContent:"not_yet"
+						responseContent: "not_yet",
 					});
 					await this.bot.telegram.sendMessage(
 						Number(process.env.ADMIN),
 						userInput
 					);
-					master.isWritingToAdmin = false;
-					await master.save();
+					master1.isWritingToAdmin = false;
+					await master1.save();
 					await ctx.replyWithHTML(
 						"We sent your message to admin, please wait admin's response",
 						{
@@ -78,84 +86,89 @@ export class MasterService {
 						}
 					);
 				}
-				switch (master?.last_state) {
-					case null:
-						master!.last_state = "name";
-						await master?.save();
-						await ctx.reply("Enter your name:", {
-							parse_mode: "HTML",
-							...Markup.removeKeyboard(),
-						});
-						break;
-					case "name":
-						master.name = userInput;
-						master!.last_state = "phone_number";
-						await master?.save();
-						await ctx.reply("Enter your phone number:", {
-							parse_mode: "HTML",
-							...Markup.keyboard([
-								[Markup.button.contactRequest("Send Phone Number")],
-							]).resize(),
-						});
-						break;
-					case "workshop_name":
-						master.workshop_name = userInput;
-						master!.last_state = "address";
-						await master?.save();
-						await ctx.reply("Enter your workshop's address:", {
-							parse_mode: "HTML",
-							...Markup.keyboard([["Ignore Workshop address"]]).resize(),
-						});
-						break;
-					case "address":
-						master.address = userInput;
-						master!.last_state = "target";
-						await master?.save();
-						await ctx.reply("Enter your workshop's target:", {
-							parse_mode: "HTML",
-							...Markup.keyboard([["Ignore Workshop target"]]).resize(),
-						});
-						break;
-					case "target":
-						master.target_for_address = userInput;
-						master!.last_state = "location";
-						await master?.save();
-						await ctx.reply("Enter your workshop's location:", {
-							parse_mode: "HTML",
-							...Markup.keyboard([
-								[Markup.button.locationRequest("Send location")],
-							]).resize(),
-						});
-						break;
-					case "start_time":
-						master.work_start_time = userInput;
-						master!.last_state = "end_time";
-						await master?.save();
-						await ctx.reply("Enter your end time:\nFor example: 18:00", {
-							parse_mode: "HTML",
-							...Markup.removeKeyboard(),
-						});
-						break;
-					case "end_time":
-						master.work_end_time = userInput;
-						master!.last_state = "avg_time";
-						await master?.save();
-						await ctx.reply(
-							"Enter the average time spent per customer:\nFor example: 30 min",
-							{
-								parse_mode: "HTML",
-								...Markup.removeKeyboard(),
-							}
-						);
-						break;
-					case "avg_time":
-						master.avgtime_for_custommer = userInput;
-						master!.last_state = "pending";
-						master!.withAdmin = "pending";
-						await master?.save();
-						await this.bot.telegram.sendMessage(
-							Number(process.env.ADMIN),
-							`<b>New master registred, confirm this?</b>
+				const masters = await this.mastersModel.findAll({
+					where: { user_id: master_id },
+				});
+				for (const master of masters) {
+					if (master?.last_state != "finish") {
+						switch (master?.last_state) {
+							case null:
+								master!.last_state = "name";
+								await master?.save();
+								await ctx.reply("Enter your name:", {
+									parse_mode: "HTML",
+									...Markup.removeKeyboard(),
+								});
+								break;
+							case "name":
+								master.name = userInput;
+								master!.last_state = "phone_number";
+								await master?.save();
+								await ctx.reply("Enter your phone number:", {
+									parse_mode: "HTML",
+									...Markup.keyboard([
+										[Markup.button.contactRequest("Send Phone Number")],
+									]).resize(),
+								});
+								break;
+							case "workshop_name":
+								master.workshop_name = userInput;
+								master!.last_state = "address";
+								await master?.save();
+								await ctx.reply("Enter your workshop's address:", {
+									parse_mode: "HTML",
+									...Markup.keyboard([["Ignore Workshop address"]]).resize(),
+								});
+								break;
+							case "address":
+								master.address = userInput;
+								master!.last_state = "target";
+								await master?.save();
+								await ctx.reply("Enter your workshop's target:", {
+									parse_mode: "HTML",
+									...Markup.keyboard([["Ignore Workshop target"]]).resize(),
+								});
+								break;
+							case "target":
+								master.target_for_address = userInput;
+								master!.last_state = "location";
+								await master?.save();
+								await ctx.reply("Enter your workshop's location:", {
+									parse_mode: "HTML",
+									...Markup.keyboard([
+										[Markup.button.locationRequest("Send location")],
+									]).resize(),
+								});
+								break;
+							case "start_time":
+								master.work_start_time = userInput;
+								master!.last_state = "end_time";
+								await master?.save();
+								await ctx.reply("Enter your end time:\nFor example: 18:00", {
+									parse_mode: "HTML",
+									...Markup.removeKeyboard(),
+								});
+								break;
+							case "end_time":
+								master.work_end_time = userInput;
+								master!.last_state = "avg_time";
+								await master?.save();
+								await ctx.reply(
+									"Enter the average time spent per customer:\nFor example: 30 min",
+									{
+										parse_mode: "HTML",
+										...Markup.removeKeyboard(),
+									}
+								);
+								break;
+							case "avg_time":
+								master.avgtime_for_custommer = userInput;
+								master!.last_state = "pending";
+								master!.withAdmin = "pending";
+								await master?.save();
+								await this.bot.telegram.sendMessage(
+									Number(process.env.ADMIN),
+									`<b>New master registred, confirm this?</b>
 1. Name - ${master.name}
 2. Phone number - ${master.phone_number}
 3. Workshop name - ${master.workshop_name ? master.workshop_name : "Ignored"}
@@ -166,25 +179,25 @@ export class MasterService {
 8. Time to finish work - ${master.work_end_time}
 9. Avarage time spent per customer - ${master.avgtime_for_custommer}
 <b>Confirm this information?</b>`,
-							{
-								reply_markup: {
-									inline_keyboard: [
-										[
-											{
-												text: "Confirm",
-												callback_data: `confirm_${master_id}`,
-											},
-											{
-												text: "Reject",
-												callback_data: `reject_${master_id}`,
-											},
-										],
-									],
-								},
-							}
-						);
-						await ctx.replyWithHTML(
-							`1. Name - ${master.name}
+									{
+										reply_markup: {
+											inline_keyboard: [
+												[
+													{
+														text: "Confirm",
+														callback_data: `confirm_${master_id}`,
+													},
+													{
+														text: "Reject",
+														callback_data: `reject_${master_id}`,
+													},
+												],
+											],
+										},
+									}
+								);
+								await ctx.replyWithHTML(
+									`1. Name - ${master.name}
 2. Phone number - ${master.phone_number}
 3. Workshop name - ${master.workshop_name ? master.workshop_name : "Ignored"}
 4. Workshop address - ${master.address ? master.address : "Ignored"}
@@ -195,15 +208,17 @@ export class MasterService {
 9. Avarage time spent per customer - ${master.avgtime_for_custommer}
 <b>We sent your data to admin please wait a little or click Check</b>
 							`,
-							{
-								parse_mode: "HTML",
-								...Markup.keyboard([
-									["Check", "Reject"],
-									["Write to Admin"],
-								]).resize(),
-							}
-						);
-						break;
+									{
+										parse_mode: "HTML",
+										...Markup.keyboard([
+											["Check", "Reject"],
+											["Write to Admin"],
+										]).resize(),
+									}
+								);
+								break;
+						}
+					}
 				}
 			} catch (error) {
 				console.log("Error on onMaster: ", error);
@@ -266,54 +281,56 @@ export class MasterService {
 	async onConfirm(ctx: Context) {
 		try {
 			const user_id = String(ctx.from?.id);
-			const master = await this.mastersModel.findOne({ where: { user_id } });
-			if (!master) {
-				await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
-					...Markup.keyboard([[`/start`]])
-						.oneTime()
-						.resize(),
-				});
-			} else if (
-				master.last_state == "pending" &&
-				master.withAdmin == "pending"
-			) {
-				await ctx.replyWithHTML(
-					"The admin has not yet verified your information, please wait until the admin verifies your information or contact the admin.",
-					{
-						parse_mode: "HTML",
-						...Markup.keyboard([
-							["Check", "Reject"],
-							["Write to Admin"],
-						]).resize(),
-					}
-				);
-			} else if (
-				master.last_state == "pending" &&
-				master.withAdmin == "confirmed"
-			) {
-				master.withAdmin = "confirmed";
-				await master.save();
-				await ctx.replyWithHTML(
-					`🎉 Congratulations, you've successfully registered!`,
-					{
-						...Markup.keyboard([
-							["Customers", "Time", "Rating"],
-							["Edit my data"],
-						]).resize(),
-					}
-				);
-			} else if (
-				master.last_state == "pending" &&
-				master.withAdmin == "rejected"
-			) {
-				master.withAdmin = "rejected";
-				await master.save();
-				await ctx.replyWithHTML(
-					`Admin rejected your data, please click <b>start</b> to register again or contact with admin`,
-					{
-						...Markup.keyboard([[`/start`]]).resize(),
-					}
-				);
+			const masters = await this.mastersModel.findAll({ where: { user_id } });
+			for (const master of masters) {
+				if (!master) {
+					await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
+						...Markup.keyboard([[`/start`]])
+							.oneTime()
+							.resize(),
+					});
+				} else if (
+					master.last_state == "pending" &&
+					master.withAdmin == "pending"
+				) {
+					await ctx.replyWithHTML(
+						"The admin has not yet verified your information, please wait until the admin verifies your information or contact the admin.",
+						{
+							parse_mode: "HTML",
+							...Markup.keyboard([
+								["Check", "Reject"],
+								["Write to Admin"],
+							]).resize(),
+						}
+					);
+				} else if (
+					master.last_state == "pending" &&
+					master.withAdmin == "confirmed"
+				) {
+					master.withAdmin = "confirmed";
+					await master.save();
+					await ctx.replyWithHTML(
+						`🎉 Congratulations, you've successfully registered!`,
+						{
+							...Markup.keyboard([
+								["Customers", "Time", "Rating"],
+								["Edit my data"],
+							]).resize(),
+						}
+					);
+				} else if (
+					master.last_state == "pending" &&
+					master.withAdmin == "rejected"
+				) {
+					master.withAdmin = "rejected";
+					await master.save();
+					await ctx.replyWithHTML(
+						`Admin rejected your data, please click <b>start</b> to register again or contact with admin`,
+						{
+							...Markup.keyboard([[`/start`]]).resize(),
+						}
+					);
+				}
 			}
 		} catch (error) {
 			console.log(`Error on confirm: `, error);
@@ -374,6 +391,88 @@ export class MasterService {
 			await ctx.replyWithHTML(`Write your problem, we will send it to Admin:`, {
 				...Markup.removeKeyboard(),
 			});
+		} catch (error) {
+			console.log(error);
+		}
+	}
+	async onMasterMarks(ctx) {
+		try {
+			const user_id = String(ctx.from?.id);
+			const master = await this.mastersModel.findOne({ where: { user_id } });
+			if (!master) {
+				await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
+					...Markup.keyboard([[`/start`]])
+						.oneTime()
+						.resize(),
+				});
+			} else {
+				const all = await this.masterCustomerModel.findAll({
+					where: { master_id: user_id },
+				});
+				const allMarksUser: string[] = [];
+				var avarageMark: number = 0;
+				const markType = {
+					"1": "⭐",
+					"2": "⭐⭐",
+					"3": "⭐⭐⭐",
+					"4": "⭐⭐⭐⭐",
+					"5": "⭐⭐⭐⭐⭐",
+				};
+				for (const each of all) {
+					const customer = await this.customersModel.findOne({
+						where: { user_id: each.user_id },
+					});
+					avarageMark += each.mark;
+					allMarksUser.push(`${customer?.name} => ${markType[each.mark]}`);
+				}
+				avarageMark = avarageMark / all.length;
+				let response = allMarksUser.join("\n\n");
+				response += `\n\n<b>Avarage mark: ${markType[String(avarageMark.toFixed())]}, (${avarageMark})</b>`;
+				await await ctx.replyWithHTML(response, {
+					...Markup.keyboard([
+						["Customers", "Time", "Rating"],
+						["Edit my data"],
+					]).resize(),
+				});
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	}
+	async showCustomers(ctx: Context) {
+		try {
+			const user_id = String(ctx.from?.id);
+			const master = await this.mastersModel.findOne({ where: { user_id } });
+			if (!master) {
+				await ctx.replyWithHTML(`Please click the <b>Start</b> button.`, {
+					...Markup.keyboard([[`/start`]])
+						.oneTime()
+						.resize(),
+				});
+			} else {
+				const all = await this.masterCustomerModel.findAll({
+					where: { master_id: user_id },
+				});
+				let counter = 0;
+				for (const each of all) {
+					counter++;
+					const customer = await this.customersModel.findOne({
+						where: { user_id: each.user_id },
+					});
+					await ctx.replyWithHTML(`<b>${counter} - Metting </b>
+Customer name - ${customer?.name}
+Customer phone - ${customer?.phone_number}
+Metting date - ${each.date}
+Metting time - ${each.time}
+Metting status - ${each.status}						`);
+				}
+				await ctx.replyWithHTML("Menu:", {
+					...Markup.keyboard([
+						["Customers", "Time", "Rating"],
+						["Edit my data"],
+					]).resize(),
+				});
+			}
 		} catch (error) {
 			console.log(error);
 		}
