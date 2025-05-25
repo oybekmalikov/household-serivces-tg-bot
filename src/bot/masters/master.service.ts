@@ -7,12 +7,14 @@ import { ChatWithAdmin } from "../models/chat-with-admin.model";
 import { Customer } from "../models/customer.model";
 import { MasterCustomers } from "../models/master-customers.model";
 import { Masters } from "../models/master.model";
+import { Buttons } from '../models/buttons.model'
 
 @Injectable()
 export class MasterService {
 	constructor(
 		@InjectModel(Masters) private readonly mastersModel: typeof Masters,
 		@InjectModel(Customer) private readonly customersModel: typeof Customer,
+		@InjectModel(Buttons) private readonly buttonsModel: typeof Buttons,
 		@InjectModel(MasterCustomers)
 		private readonly masterCustomerModel: typeof MasterCustomers,
 		@InjectModel(ChatWithAdmin)
@@ -29,7 +31,7 @@ export class MasterService {
 				(master && master.last_state == "finish") ||
 				(master && master.withAdmin == "confirmed")
 			) {
-				await ctx.replyWithHTML(`Welcome ${master.name}`, {
+				await ctx.replyWithHTML(`🙋‍♂️ Welcome ${master.name}`, {
 					parse_mode: "HTML",
 					...Markup.keyboard([
 						["Customers", "Time", "Rating"],
@@ -39,12 +41,23 @@ export class MasterService {
 						.oneTime(),
 				});
 			} else if (!master) {
+				const services = await this.buttonsModel.findAll();
+				const buttons: any[] = [];
+				let temp: any[] = [];
+				let counter = 0;
+				for (const svc of services) {
+					counter++;
+					temp.push(`${svc.datas}`);
+					if (counter % 2 === 0) {
+						buttons.push(temp);
+						temp = [];
+					}
+				}
+				if (temp.length > 0) {
+					buttons.push(temp);
+				}
 				await ctx.replyWithHTML("Select the desired section:", {
-					...Markup.keyboard([
-						["Hairdresser", "Beauty Salon"],
-						["Jewelry Workshop", "Watchmaker"],
-						["Shoe Workshop"],
-					]).resize(),
+					...Markup.keyboard(buttons).resize(),
 				});
 			} else {
 				this.onText(ctx);

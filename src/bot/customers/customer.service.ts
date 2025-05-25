@@ -4,6 +4,7 @@ import { InjectBot } from "nestjs-telegraf";
 import { Op } from "sequelize";
 import { Context, Markup, Telegraf } from "telegraf";
 import { BOT_NAME } from "../../app.constants";
+import { Buttons } from "../models/buttons.model";
 import { Customer } from "../models/customer.model";
 import { MasterCustomers } from "../models/master-customers.model";
 import { Masters } from "../models/master.model";
@@ -13,6 +14,7 @@ export class CustomerService {
 	constructor(
 		@InjectModel(Customer) private readonly customersModel: typeof Customer,
 		@InjectModel(Masters) private readonly mastersModel: typeof Masters,
+		@InjectModel(Buttons) private readonly buttonsModel: typeof Buttons,
 		@InjectModel(MasterCustomers)
 		private readonly masterCustomerModel: typeof MasterCustomers,
 		@InjectBot(BOT_NAME) private readonly bot: Telegraf<Context>
@@ -30,7 +32,7 @@ export class CustomerService {
 				...Markup.removeKeyboard(),
 			});
 		} else if (customer.status) {
-			await ctx.replyWithHTML(`Welcome ${customer.name}`, {
+			await ctx.replyWithHTML(`🙋‍♂️ Welcome ${customer.name}`, {
 				...Markup.keyboard([
 					["My meetings", "Make an appointment"],
 					["Services"],
@@ -270,7 +272,7 @@ Metting status - ${meeting.status}
 					master_id,
 					last_state: "withwho",
 				});
-				this.onMettingStepWithWho(ctx)
+				this.onMettingStepWithWho(ctx);
 			}
 		} catch (error) {
 			console.log(error);
@@ -615,13 +617,24 @@ Metting status - ${makker.status}
 	}
 	async onServices(ctx: Context) {
 		try {
+			const services = await this.buttonsModel.findAll();
+			const buttons: any[] = [];
+			let temp: any[] = [];
+			let counter = 0;
+			for (const svc of services) {
+				counter++;
+				temp.push(`<${svc.datas}>`);
+				if (counter % 2 === 0) {
+					buttons.push(temp);
+					temp = [];
+				}
+			}
+			if (temp.length > 0) {
+				buttons.push(temp);
+			}
+			buttons.push(["<Back to Main>"]);
 			await ctx.replyWithHTML("Select the desired section:", {
-				...Markup.keyboard([
-					["<Hairdresser>", "<Beauty Salon>"],
-					["<Jewelry Workshop>", "<Watchmaker>"],
-					["<Shoe Workshop>"],
-					["<Back to Main>"],
-				]).resize(),
+				...Markup.keyboard(buttons).resize(),
 			});
 		} catch (error) {
 			console.log(error);

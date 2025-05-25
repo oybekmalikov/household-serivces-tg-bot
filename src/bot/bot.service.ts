@@ -177,6 +177,7 @@ export class BotService {
 			this.adminService.responseToMaster(ctx);
 			this.masterService.onText(ctx);
 			this.customerService.onText(ctx);
+			this.adminService.onText(ctx);
 		} catch (error) {
 			console.log(`error on onText: `, error);
 		}
@@ -185,7 +186,7 @@ export class BotService {
 		try {
 			await ctx.replyWithHTML(menuText, {
 				parse_mode: "HTML",
-				...Markup.keyboard([["Master", "Customer"]])
+				...Markup.keyboard([["<Master>", "<Customer>"], ["<Services>"]])
 					.oneTime()
 					.resize(),
 			});
