@@ -48,6 +48,8 @@ export class Masters extends Model<Masters, IMastersCreationAttr> {
 	declare isWritingToAdmin: boolean;
 	@Column({ type: DataType.TEXT })
 	declare times: string;
-	@Column({ type: DataType.DECIMAL })
+	@Column({ type: DataType.DECIMAL, defaultValue: 0 })
 	declare rating: number;
+	@Column({ type: DataType.STRING(100) })
+	declare other_actions: string;
 }

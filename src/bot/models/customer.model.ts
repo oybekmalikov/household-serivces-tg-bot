@@ -18,7 +18,7 @@ export class Customer extends Model<Customer, ICustomerCreationAttr> {
 	declare phone_number: string;
 	@Column({ type: DataType.BOOLEAN })
 	declare status: boolean;
-	@Column({ type: DataType.TEXT })
+	@Column({ type: DataType.TEXT, defaultValue: "" })
 	declare times: string;
 	@Column({ type: DataType.STRING })
 	declare actions: string;

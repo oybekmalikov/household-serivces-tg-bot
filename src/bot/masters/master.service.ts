@@ -83,11 +83,11 @@ export class MasterService {
 		if ("text" in ctx.message!) {
 			try {
 				const master_id = String(ctx.from?.id);
-				const master1: Masters | null = await this.mastersModel.findOne({
+				const master = await this.mastersModel.findOne({
 					where: { user_id: master_id },
 				});
 				const userInput = ctx.message!.text;
-				if (master1?.isWritingToAdmin) {
+				if (master?.isWritingToAdmin) {
 					await this.chatWithAdminModel.create({
 						senderId: master_id,
 						adminId: String(process.env.ADMIN),
@@ -98,19 +98,72 @@ export class MasterService {
 						Number(process.env.ADMIN),
 						userInput
 					);
-					master1.isWritingToAdmin = false;
-					await master1.save();
+					master.isWritingToAdmin = false;
+					await master.save();
 					await ctx.replyWithHTML(
 						"We sent your message to admin, please wait admin's response",
 						{
 							...Markup.removeKeyboard(),
 						}
 					);
-				}
-				const master = await this.mastersModel.findOne({
-					where: { user_id: master_id },
-				});
-				if (master?.last_state != "finish") {
+				} else if (master?.other_actions == "editingname") {
+					master.name = userInput;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New name saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.onStartEditMasterData(ctx, master_id);
+				} else if (master?.other_actions == "editingtarget_for_address") {
+					master.target_for_address = userInput;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New target saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.onStartEditMasterData(ctx, master_id);
+				} else if (master?.other_actions == "editingworkshop_name") {
+					master.workshop_name = userInput;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New workshop name saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.onStartEditMasterData(ctx, master_id);
+				} else if (master?.other_actions == "editingaddress") {
+					master.address = userInput;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New address saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.onStartEditMasterData(ctx, master_id);
+				} else if (master?.other_actions == "editingwork_start_time") {
+					master.work_start_time = userInput;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New start time saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.onStartEditMasterData(ctx, master_id);
+				} else if (master?.other_actions == "editingwork_end_time") {
+					master.work_end_time = userInput;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New end time saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.onStartEditMasterData(ctx, master_id);
+				} else if (master?.other_actions == "editingavgtime_for_custommer") {
+					master.avgtime_for_custommer = userInput;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New avarage time saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.onStartEditMasterData(ctx, master_id);
+					// -----------------------------------------------------------
+				} else if (master?.last_state != "finish") {
 					switch (master?.last_state) {
 						case null:
 							master!.last_state = "name";
@@ -546,12 +599,291 @@ Metting date - ${each.date}
 Metting time - ${each.time}
 Metting status - ${each.status}						`);
 				}
-				await ctx.replyWithHTML("You don't have active customers:", {
+				if (counter == 0) {
+					await ctx.replyWithHTML("You don't have active customers:", {
+						...Markup.keyboard([
+							["Customers", "Time", "Rating"],
+							["Edit my data"],
+						]).resize(),
+					});
+				}
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	}
+	async onStartEditMasterData(ctx: Context, masterId?: string) {
+		const master_id = String(ctx.from?.id) || masterId;
+		await ctx.replyWithHTML("Select the date you want to change:", {
+			reply_markup: {
+				inline_keyboard: [
+					[
+						{
+							text: "Name",
+							callback_data: `editname_${master_id}`,
+						},
+						{
+							text: "Workshop Name",
+							callback_data: `editWName_${master_id}`,
+						},
+					],
+					[
+						{
+							text: "Address",
+							callback_data: `editaddress_${master_id}`,
+						},
+						{
+							text: "Target for Address",
+							callback_data: `edittfa_${master_id}`,
+						},
+					],
+					[
+						{
+							text: "Location",
+							callback_data: `editloc_${master_id}`,
+						},
+						{
+							text: "Phone",
+							callback_data: `editphone_${master_id}`,
+						},
+					],
+					[
+						{
+							text: "Start work Time",
+							callback_data: `editswt_${master_id}`,
+						},
+						{
+							text: "End work Time",
+							callback_data: `editewt_${master_id}`,
+						},
+					],
+					[
+						{
+							text: "Avarage spend time for customers",
+							callback_data: `editavg_${master_id}`,
+						},
+					],
+				],
+			},
+		});
+	}
+	async onBackFromEditing(ctx: Context) {
+		const master_id = String(ctx.from?.id);
+		await this.mastersModel.update(
+			{ other_actions: "" },
+			{ where: { user_id: master_id } }
+		);
+		await ctx.replyWithHTML("Choose menu:", {
+			...Markup.keyboard([
+				["Customers", "Time", "Rating"],
+				["Edit my data"],
+			]).resize(),
+		});
+	}
+	async saveOld(ctx: Context) {
+		const master_id = String(ctx.from?.id);
+		const contextMessage = ctx.callbackQuery!["message"];
+		ctx.deleteMessage(contextMessage?.message_id);
+		await ctx.replyWithHTML("Data was not changed.", {
+			...Markup.keyboard([["<Back"]]).resize(),
+		});
+		await this.mastersModel.update(
+			{ other_actions: "" },
+			{ where: { user_id: master_id } }
+		);
+		await this.onStartEditMasterData(ctx, master_id);
+	}
+	async onAskEditingData(ctx: Context, which: string, form: string) {
+		try {
+			const contextAction = ctx.callbackQuery!["data"];
+			const contextMessage = ctx.callbackQuery!["message"];
+			const master_id = contextAction.split("_")[1];
+			const master = await this.mastersModel.findOne({
+				where: { user_id: master_id },
+			});
+			if (!master) {
+				await ctx.replyWithHTML("Please click <b>/start</b>", {
+					...Markup.keyboard([["/start"]]).resize(),
+				});
+				return;
+			}
+			master.other_actions = `editing${which}`;
+			await master.save();
+			await ctx.deleteMessage(contextMessage?.message_id);
+			if (which == "phone_number") {
+				await ctx.replyWithHTML(
+					`Send a new ${form}:\n(Old: ${master[`${which}`]})`,
+					{
+						reply_markup: {
+							inline_keyboard: [
+								[
+									{
+										text: "Save old",
+										callback_data: `saveold`,
+									},
+								],
+							],
+						},
+					}
+				);
+				await ctx.replyWithHTML("Send phone number:", {
 					...Markup.keyboard([
-						["Customers", "Time", "Rating"],
-						["Edit my data"],
+						Markup.button.contactRequest("Send phone number"),
 					]).resize(),
 				});
+			} else if (which == "location") {
+				await ctx.replyWithHTML(`Old location is:`, {
+					reply_markup: {
+						inline_keyboard: [
+							[
+								{
+									text: "Save old",
+									callback_data: `saveold`,
+								},
+							],
+						],
+					},
+				});
+				await ctx.replyWithLocation(
+					Number(master.location.split("|")[0]),
+					Number(master.location.split("|")[1])
+				);
+				await ctx.replyWithHTML("Send new location:", {
+					...Markup.keyboard([
+						Markup.button.locationRequest("Send location"),
+					]).resize(),
+				});
+			} else {
+				await ctx.replyWithHTML(
+					`Enter a new ${form}:\n(Old: ${master[`${which}`]})`,
+					{
+						reply_markup: {
+							inline_keyboard: [
+								[
+									{
+										text: "Save old",
+										callback_data: `saveold`,
+									},
+								],
+							],
+						},
+					}
+				);
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	}
+	formatTimeButtons(
+		input: string,
+		user_id: string
+	): { text: string; callback_data: string }[][] {
+		const parts = input.split("||").filter(Boolean);
+		const result: { text: string; callback_data: string }[][] = [];
+		const row: { text: string; callback_data: string }[] = [];
+		for (const part of parts) {
+			const [timeRange, status] = part.split("|");
+			// let emoji = status === "t" ? "✅" : "❌";
+			let emoji = "";
+			let tmp = "";
+			if (status == "t") {
+				emoji = "✅";
+				tmp = "1";
+			} else {
+				emoji = "❌";
+				tmp = "0";
+			}
+			const button = {
+				text: `${timeRange} ${emoji}`,
+				callback_data: `timemaster_${timeRange}_${user_id}_${tmp}`,
+			};
+			row.push(button);
+			if (row.length === 2) {
+				result.push([...row]);
+				row.length = 0;
+			}
+		}
+		if (row.length) {
+			result.push([...row]);
+		}
+		return result;
+	}
+
+	updateTimeSlotStatus(
+		input: string,
+		fromTime: string,
+		toTime: string,
+		newStatus: "t" | "f"
+	): string {
+		const parts = input.split("||").filter(Boolean);
+		const updated = parts.map((part) => {
+			const [timeRange, status] = part.split("|");
+			if (timeRange === `${fromTime}-${toTime}`) {
+				return `${timeRange}|${newStatus}`;
+			}
+			return part;
+		});
+		return updated.join("||");
+	}
+	async onMasterTime(ctx: Context) {
+		try {
+			const master_id = String(ctx.from!.id);
+			const master = await this.mastersModel.findOne({
+				where: { user_id: master_id },
+			});
+			const buttons = this.formatTimeButtons(master!.times!, master_id);
+			await ctx.replyWithHTML(
+				`Your working time.\n✅ - You are free at this time.\n❌ - You are busy at this time.\nYou can only change your free times to busy, but you cannot change your busy times to free because you have a meeting with your clients at that time.`,
+				{
+					reply_markup: {
+						inline_keyboard: buttons,
+					},
+				}
+			);
+		} catch (error) {
+			console.log(error);
+		}
+	}
+	async onEditMasterTime(ctx: Context) {
+		try {
+			const contextAction = ctx.callbackQuery!["data"];
+			const contextMessage = ctx.callbackQuery!["message"];
+			const master_id = contextAction.split("_")[2];
+			const time = contextAction.split("_")[1];
+			const st = contextAction.split("_")[3];
+			const master = await this.mastersModel.findOne({
+				where: { user_id: master_id },
+			});
+			if (st == "0") {
+				const buttons = this.formatTimeButtons(master!.times, master_id);
+				ctx.deleteMessage(contextMessage?.message_id);
+				await ctx.replyWithHTML(
+					`You cannot change your busy times to free because you have a meeting with your clients at that time.`,
+					{
+						reply_markup: {
+							inline_keyboard: buttons,
+						},
+					}
+				);
+			} else {
+				const inputs = master!.times;
+				master!.times = this.updateTimeSlotStatus(
+					inputs,
+					time.split("-")[0],
+					time.split("-")[1],
+					"f"
+				);
+				await master?.save();
+				const buttons = this.formatTimeButtons(master!.times, master_id);
+				ctx.deleteMessage(contextMessage?.message_id);
+				await ctx.replyWithHTML(
+					`Your working time.\n✅ - You are free at this time.\n❌ - You are busy at this time.\nYou can only change your free times to busy, but you cannot change your busy times to free because you have a meeting with your clients at that time.`,
+					{
+						reply_markup: {
+							inline_keyboard: buttons,
+						},
+					}
+				);
 			}
 		} catch (error) {
 			console.log(error);

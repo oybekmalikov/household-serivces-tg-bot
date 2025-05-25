@@ -63,6 +63,30 @@ export class BotService {
 						]).resize(),
 					});
 				}
+			} else if (
+				master?.other_actions == "editingphone_number" &&
+				"contact" in ctx.message!
+			) {
+				if (String(ctx.message.contact.user_id) == user_id) {
+					let phone = ctx.message!.contact.phone_number;
+					if (phone[0] != "+") {
+						phone = "+" + phone;
+					}
+					master.phone_number = phone;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New phone number saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.masterService.onStartEditMasterData(ctx, master.user_id);
+				} else {
+					return await ctx.reply("Enter your own phone number:", {
+						parse_mode: "HTML",
+						...Markup.keyboard([
+							[Markup.button.contactRequest("Send phone number")],
+						]).resize(),
+					});
+				}
 			}
 			// -----------------------CUSTOMER------------------------
 			const customer = await this.customerModel.findOne({ where: { user_id } });
@@ -134,6 +158,14 @@ export class BotService {
 						ctx.message.location.longitude,
 						String(ctx.from!.id)
 					);
+				} else if (master?.other_actions == "editinglocation") {
+					master.location = `${ctx.message.location.latitude}|${ctx.message.location.longitude}`;
+					master.other_actions = "";
+					await master.save();
+					await ctx.replyWithHTML(`New location saved!`, {
+						...Markup.keyboard([["<Back"]]).resize(),
+					});
+					await this.masterService.onStartEditMasterData(ctx, master.user_id);
 				}
 			}
 		} catch (error) {

@@ -75,7 +75,83 @@ export class MasterUpdate {
 	}
 	@Hears("Time")
 	async showTimes(ctx: Context) {
-		return this.masterService.showCustomers(ctx);
+		return this.masterService.onMasterTime(ctx);
+	}
+	@Hears("Edit my data")
+	async startEditingData(ctx: Context) {
+		return this.masterService.onStartEditMasterData(ctx);
+	}
+	@Hears("<Back")
+	async onBackFromEditing(ctx: Context) {
+		return this.masterService.onBackFromEditing(ctx);
+	}
+	@Action(/saveold/)
+	async saveOld(ctx: Context) {
+		return this.masterService.saveOld(ctx);
+	}
+	@Action(/editname_+\d+/)
+	async onAskEditingName(ctx: Context) {
+		return this.masterService.onAskEditingData(ctx, "name", "name");
+	}
+	@Action(/editWName_+\d+/)
+	async onAskEditingWrkshpname(ctx: Context) {
+		return this.masterService.onAskEditingData(
+			ctx,
+			"workshop_name",
+			"Workshop Name"
+		);
+	}
+	@Action(/editaddress_+\d+/)
+	async onAskEditingAddress(ctx: Context) {
+		return this.masterService.onAskEditingData(ctx, "address", "address");
+	}
+	@Action(/edittfa_+\d+/)
+	async onAskEditingTarget(ctx: Context) {
+		return this.masterService.onAskEditingData(
+			ctx,
+			"target_for_address",
+			"target for address"
+		);
+	}
+	@Action(/editloc_+\d+/)
+	async onAskEditingLocation(ctx: Context) {
+		return this.masterService.onAskEditingData(ctx, "location", "location");
+	}
+	@Action(/editphone_+\d+/)
+	async onAskEditingPhone(ctx: Context) {
+		return this.masterService.onAskEditingData(
+			ctx,
+			"phone_number",
+			"phone number"
+		);
+	}
+	@Action(/editswt_+\d+/)
+	async onAskEditingStartWorkTime(ctx: Context) {
+		return this.masterService.onAskEditingData(
+			ctx,
+			"work_start_time",
+			"start work time"
+		);
+	}
+	@Action(/editewt_+\d+/)
+	async onAskEditingEndWorkTime(ctx: Context) {
+		return this.masterService.onAskEditingData(
+			ctx,
+			"work_end_time",
+			"end work time"
+		);
+	}
+	@Action(/editavg_+\d+/)
+	async onAskEditingAvgTime(ctx: Context) {
+		return this.masterService.onAskEditingData(
+			ctx,
+			"avgtime_for_custommer",
+			"avarage spend time for customers"
+		);
+	}
+	@Action(/timemaster_/)
+	async onAskEditingTime(ctx: Context) {
+		return this.masterService.onEditMasterTime(ctx);
 	}
 	// @On("text")
 	// async onText(ctx: Context) {
