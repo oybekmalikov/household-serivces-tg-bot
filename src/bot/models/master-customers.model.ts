@@ -8,7 +8,7 @@ interface MasterCustomersCreationAttr {
 	status?: boolean;
 	mark?: number;
 	note?: string;
-	last_state: string;
+	last_state?: string;
 }
 @Table({ tableName: "master_customer", freezeTableName: true })
 export class MasterCustomers extends Model<
@@ -23,9 +23,11 @@ export class MasterCustomers extends Model<
 	declare user_id: string;
 	@Column({ type: DataType.STRING(20) })
 	declare date: string;
-	@Column({ type: DataType.STRING(10) })
+	@Column({ type: DataType.STRING(20) })
 	declare time: string;
-	@Column({ type: DataType.ENUM("pending", "complated", "canceled","feedback") })
+	@Column({
+		type: DataType.ENUM("pending", "complated", "canceled", "feedback"),
+	})
 	declare status: string;
 	@Column({ type: DataType.INTEGER })
 	declare mark: number;
@@ -35,5 +37,4 @@ export class MasterCustomers extends Model<
 	declare last_state: string;
 	@Column({ type: DataType.STRING })
 	declare feedback: string;
-	
 }

@@ -7,13 +7,10 @@ interface ICustomerCreationAttr {
 	status?: boolean;
 }
 @Table({ tableName: "customers", freezeTableName: true })
-export class Customer extends Model<
-	Customer,
-	ICustomerCreationAttr
-> {
+export class Customer extends Model<Customer, ICustomerCreationAttr> {
 	@Column({ type: DataType.INTEGER, autoIncrement: true, primaryKey: true })
 	declare id: number;
-	@Column({ type: DataType.STRING })
+	@Column({ type: DataType.STRING, unique: true })
 	declare user_id: string;
 	@Column({ type: DataType.STRING(50) })
 	declare name: string;
@@ -21,4 +18,8 @@ export class Customer extends Model<
 	declare phone_number: string;
 	@Column({ type: DataType.BOOLEAN })
 	declare status: boolean;
+	@Column({ type: DataType.TEXT })
+	declare times: string;
+	@Column({ type: DataType.STRING })
+	declare actions: string;
 }

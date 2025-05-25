@@ -15,23 +15,23 @@ export class MasterUpdate {
 	}
 	@Hears("Hairdresser")
 	async Hairdresser(ctx: Context) {
-		return this.masterService.onMaster(ctx, "hairdresser");
+		return this.masterService.onMaster(ctx, "Hairdresser");
 	}
 	@Hears("Beauty Salon")
 	async beautySalon(ctx: Context) {
-		return this.masterService.onMaster(ctx, "beauty_salon");
+		return this.masterService.onMaster(ctx, "Beauty Salon");
 	}
 	@Hears("Jewelry Workshop")
 	async jewelryWorkshop(ctx: Context) {
-		return this.masterService.onMaster(ctx, "jewelry_workshop");
+		return this.masterService.onMaster(ctx, "Jewelry Workshop");
 	}
 	@Hears("Watchmaker")
 	async watchmaker(ctx: Context) {
-		return this.masterService.onMaster(ctx, "watchmaker");
+		return this.masterService.onMaster(ctx, "Watchmaker");
 	}
 	@Hears("Shoe Workshop")
 	async shoeWorkshop(ctx: Context) {
-		return this.masterService.onMaster(ctx, "shoe_workshop");
+		return this.masterService.onMaster(ctx, "Shoe Workshop");
 	}
 	@Hears("Ignore Workshop Name")
 	async onIgnoreWorkshopName(ctx: Context) {
@@ -71,6 +71,10 @@ export class MasterUpdate {
 	}
 	@Hears("Customers")
 	async showCustomers(ctx: Context) {
+		return this.masterService.showCustomers(ctx);
+	}
+	@Hears("Time")
+	async showTimes(ctx: Context) {
 		return this.masterService.showCustomers(ctx);
 	}
 	// @On("text")

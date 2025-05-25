@@ -18,7 +18,7 @@ interface IMastersCreationAttr {
 export class Masters extends Model<Masters, IMastersCreationAttr> {
 	@Column({ type: DataType.INTEGER, autoIncrement: true, primaryKey: true })
 	declare id: number;
-	@Column({ type: DataType.STRING })
+	@Column({ type: DataType.STRING, unique: true })
 	declare user_id: string;
 	@Column({ type: DataType.STRING(50) })
 	declare name: string;
@@ -46,4 +46,8 @@ export class Masters extends Model<Masters, IMastersCreationAttr> {
 	declare section: string;
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare isWritingToAdmin: boolean;
+	@Column({ type: DataType.TEXT })
+	declare times: string;
+	@Column({ type: DataType.DECIMAL })
+	declare rating: number;
 }
