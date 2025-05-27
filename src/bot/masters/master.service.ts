@@ -3,11 +3,11 @@ import { InjectModel } from "@nestjs/sequelize";
 import { InjectBot } from "nestjs-telegraf";
 import { Context, Markup, Telegraf } from "telegraf";
 import { BOT_NAME } from "../../app.constants";
+import { Buttons } from "../models/buttons.model";
 import { ChatWithAdmin } from "../models/chat-with-admin.model";
 import { Customer } from "../models/customer.model";
 import { MasterCustomers } from "../models/master-customers.model";
 import { Masters } from "../models/master.model";
-import { Buttons } from '../models/buttons.model'
 
 @Injectable()
 export class MasterService {
@@ -59,6 +59,13 @@ export class MasterService {
 				await ctx.replyWithHTML("Select the desired section:", {
 					...Markup.keyboard(buttons).resize(),
 				});
+			} else if (master.withAdmin == "inactive") {
+				await ctx.replyWithHTML(
+					"Admin has disabled you, please contact with admin",
+					{
+						...Markup.keyboard([["Write to Admin"]]).resize(),
+					}
+				);
 			} else {
 				this.onText(ctx);
 			}
@@ -99,7 +106,7 @@ export class MasterService {
 				const master = await this.mastersModel.findOne({
 					where: { user_id: master_id },
 				});
-				const userInput = ctx.message!.text;
+				let userInput = ctx.message!.text;
 				if (master?.isWritingToAdmin) {
 					await this.chatWithAdminModel.create({
 						senderId: master_id,
@@ -107,6 +114,7 @@ export class MasterService {
 						requestContent: userInput,
 						responseContent: "not_yet",
 					});
+					userInput += ` - from ${master.name},(${master.phone_number})`;
 					await this.bot.telegram.sendMessage(
 						Number(process.env.ADMIN),
 						userInput
