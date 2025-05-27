@@ -116,7 +116,7 @@ export class CustomerService {
 						where: { user_id: meeting.master_id },
 					});
 					counter++;
-					if (meeting.last_state == "finish") {
+					if (meeting.last_state == "finish" && meeting.status=="pending") {
 						await ctx.replyWithHTML(
 							`<b>${counter}-Metting</b>
 Master - ${master?.name}
@@ -145,7 +145,7 @@ Metting status - ${meeting.status}
 								},
 							}
 						);
-					} else {
+					} else if(counter==0){
 						await ctx.replyWithHTML(`You don't have any meetings yet.`, {
 							...Markup.keyboard([
 								["My meetings", "Make an appointment"],
